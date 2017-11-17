@@ -3,14 +3,18 @@ package gui.country.combo;
 import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Callback;
@@ -30,8 +34,8 @@ public class CountryInfo extends Application
         VBox root = new VBox(6);
 
         ComboBox<Country> countrySelector = new ComboBox<Country>(countries);
-        Callback cellFactory = showOnlyName();
-        countrySelector.setButtonCell((ListCell) cellFactory.call(null));
+        Callback<ListView<Country>, ListCell<Country>> cellFactory = showOnlyName();
+        countrySelector.setButtonCell(cellFactory.call(null));
         countrySelector.setCellFactory(cellFactory);
         CheckBox cbExactVal = new CheckBox("exacte Angaben");
 
@@ -55,6 +59,34 @@ public class CountryInfo extends Application
         areaVal.setId("area");
         densityVal.setId("density");
 
+        // ===================== Input Field =========================
+        TextField countryField = new TextField();
+        TextField capitalField = new TextField();
+        TextField populationField = new TextField();
+        TextField areaField = new TextField();
+
+        countryField.setId("countryField");
+        capitalField.setId("capitalField");
+        populationField.setId("populationField");
+        areaField.setId("areaField");
+
+        countryField.setPromptText("Land");
+        capitalField.setPromptText("Hauptstadt");
+        populationField.setPromptText("Einwohner");
+        areaField.setPromptText("Fläche");
+
+        populationField.textProperty().addListener((obs, oldVal, newVal) -> restrictToNumeric(populationField, oldVal, newVal));
+        areaField.textProperty().addListener((obs, oldVal, newVal) -> restrictToNumeric(areaField, oldVal, newVal));
+
+        // ==================== Buttons ==============================
+        Button btnAdd = new Button("Hinzuf\u00fcgen");
+        Button btnDel = new Button("L\u00f6schen");
+        btnAdd.setId("add");
+        btnDel.setId("delete");
+
+        btnAdd.setOnAction(e -> addNewCountry(e, countryField, capitalField, populationField, areaField, countrySelector));
+        btnDel.setOnAction(e -> deleteCountry(e, countrySelector));
+
         // ===================== LISTENERS ===========================
         // == And set up some id and value of checkbox and combobox ==
         // ===========================================================
@@ -70,7 +102,11 @@ public class CountryInfo extends Application
         infoLayout.addColumn(0, countryNameText, capitalText, populationText, areaText, densityText);
         infoLayout.addColumn(1, countryNameVal, capitalVal, populationVal, areaVal, densityVal);
 
-        root.getChildren().addAll(countrySelector, cbExactVal, infoLayout);
+        // ============= HBOX FOR INPUT FIELD ===========
+        HBox inputLayout = new HBox(5);
+        inputLayout.getChildren().addAll(countryField, capitalField, populationField, areaField, btnAdd);
+
+        root.getChildren().addAll(countrySelector, cbExactVal, infoLayout, inputLayout, btnDel);
         root.setPadding(new Insets(10));
         root.setSpacing(10);
 
@@ -78,6 +114,20 @@ public class CountryInfo extends Application
         primaryStage.setScene(scene);
         primaryStage.setTitle("L\u00e4nder-Informationen");
         primaryStage.show();
+    }
+
+    private void deleteCountry(ActionEvent e, ComboBox<Country> countrySelector)
+    {
+        countrySelector.getItems().remove(countrySelector.getValue());
+        if (countrySelector.getItems().size() > 0)
+        {
+            countrySelector.setValue(countries.get(0));
+        }
+        else
+        {
+            countrySelector.getItems().add(null);
+            countrySelector.setButtonCell(showOnlyName().call(null));
+        }
     }
 
     private void showSelectedCountry(Label displayCountry, Label displayCapital, Label displayPopulation, Label displayArea, Label displayDensity, Country selectedCountry, boolean isExact)
@@ -117,16 +167,59 @@ public class CountryInfo extends Application
         {
             if (number / 1000000 > 0)
             {
-                return String.format("%d Mill.", number / 1000000);
+                double result = number;
+                result /= 1000000;
+                return String.format("%,d Mill.", Math.round(result));
             }
             else
             {
-                long roundNum = (long) Math.ceil(number / 1000) * 1000;
-                return String.format("%d", roundNum);
+                double roundNum = number;
+                roundNum = Math.round(roundNum / 1000) * 1000;
+                return String.format("%,d", (long) roundNum);
             }
         }
 
         return number + "";
+    }
+
+    private void addNewCountry(ActionEvent e, TextField countryName, TextField capital, TextField population, TextField area, ComboBox<Country> countrySelector)
+    {
+        checkIfEmpty(e, area);
+        checkIfEmpty(e, population);
+        checkIfEmpty(e, capital);
+        checkIfEmpty(e, countryName);
+
+        if (!e.isConsumed())
+        {
+            if (countries.get(0) == null)
+            {
+                countries.remove(0);
+            }
+            countries.add(new Country(countryName.getText(), capital.getText(), Long.parseLong(population.getText()), Long.parseLong(area.getText())));
+            countryName.clear();
+            capital.clear();
+            population.clear();
+            area.clear();
+
+            countrySelector.setValue(countries.get(countries.size() - 1));
+        }
+    }
+
+    private void checkIfEmpty(ActionEvent e, TextField textField)
+    {
+        if (textField.getText().equals(""))
+        {
+            e.consume();
+            textField.requestFocus();
+        }
+    }
+
+    private void restrictToNumeric(TextField textField, String oldVal, String newVal)
+    {
+        if (!newVal.matches("[0-9]*"))
+        {
+            textField.setText(oldVal);
+        }
     }
 
     private Callback<ListView<Country>, ListCell<Country>> showOnlyName()
