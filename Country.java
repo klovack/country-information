@@ -41,6 +41,12 @@ public class Country
 
     public long getDensity()
     {
-        return people / area;
+        return (Math.round((double) people / (double) area));
+    }
+
+    @Override
+    public String toString()
+    {
+        return this.name;
     }
 }

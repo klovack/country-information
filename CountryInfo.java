@@ -10,18 +10,18 @@ import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import javafx.util.Callback;
 
 public class CountryInfo extends Application
 {
-    private ObservableList<Country> countries = FXCollections.observableArrayList(new Country("Germany", "Berlin", 82349400, 357168), new Country("Japan", "Tokyo", 13617445, 218766), new Country("South Korea", "Seoul", 51446201, 100210), new Country("Indonesien", "Jakarta", 261115456, 1904569));
+
+    private ObservableList<Country> countries = FXCollections.observableArrayList(new Country("Liechtenstein", "Vaduz", 36942, 160), new Country("Taka-Tuka-Land", "Säbelweiler", 467, 25), new Country("Belgien", "Brüssel", 10839905, 30528), new Country("Brasilien", "Brasilia", 192383141, 8514215), new Country("Bangladesch", "Dhaka", 161314158, 147570), new Country("San Marino", "San Marino", 32471, 61), new Country("Andorra", "Andorra la Vella", 85015, 468), new Country("Schweden", "Stockholm", 9415570, 450295), new Country("Russland", "Moskau", 143613415, 17075400), new Country("Singapur", "Singapur", 5312431, 712), new Country("Cookinseln", "Avarua", 18631, 242), new Country("Frankreich", "Paris", 64667314, 668763), new Country("Deutschland", "Berlin", 80586314, 357121), new Country("Kanada", "Ottawa", 35158304, 9984676), new Country("Monaco", "Monaco", 36136, 2));
+
+    private ComboBox<Country> countrySelector;
 
     public static void main(String[] args)
     {
@@ -33,11 +33,11 @@ public class CountryInfo extends Application
     {
         VBox root = new VBox(6);
 
-        ComboBox<Country> countrySelector = new ComboBox<Country>(countries);
-        Callback<ListView<Country>, ListCell<Country>> cellFactory = showOnlyName();
-        countrySelector.setButtonCell(cellFactory.call(null));
-        countrySelector.setCellFactory(cellFactory);
-        CheckBox cbExactVal = new CheckBox("exacte Angaben");
+        countrySelector = new ComboBox<Country>(countries);
+        countrySelector.setPromptText("Keine Länder vorhanden");
+
+        CheckBox cbExactVal = new CheckBox("exakte Angaben");
+        cbExactVal.setId("exactValues");
 
         // ============ LABELS =====================
         Label countryNameText = new Label("Land: ");
@@ -84,8 +84,8 @@ public class CountryInfo extends Application
         btnAdd.setId("add");
         btnDel.setId("delete");
 
-        btnAdd.setOnAction(e -> addNewCountry(e, countryField, capitalField, populationField, areaField, countrySelector));
-        btnDel.setOnAction(e -> deleteCountry(e, countrySelector));
+        btnAdd.setOnAction(e -> addNewCountry(e, countryField, capitalField, populationField, areaField));
+        btnDel.setOnAction(e -> deleteCountry());
 
         // ===================== LISTENERS ===========================
         // == And set up some id and value of checkbox and combobox ==
@@ -116,17 +116,12 @@ public class CountryInfo extends Application
         primaryStage.show();
     }
 
-    private void deleteCountry(ActionEvent e, ComboBox<Country> countrySelector)
+    private void deleteCountry()
     {
         countrySelector.getItems().remove(countrySelector.getValue());
         if (countrySelector.getItems().size() > 0)
         {
-            countrySelector.setValue(countries.get(0));
-        }
-        else
-        {
-            countrySelector.getItems().add(null);
-            countrySelector.setButtonCell(showOnlyName().call(null));
+            countrySelector.setValue(countries.get(countries.size() - 1));
         }
     }
 
@@ -182,19 +177,18 @@ public class CountryInfo extends Application
         return number + "";
     }
 
-    private void addNewCountry(ActionEvent e, TextField countryName, TextField capital, TextField population, TextField area, ComboBox<Country> countrySelector)
+    private void addNewCountry(ActionEvent e, TextField countryName, TextField capital, TextField population, TextField area)
     {
         checkIfEmpty(e, area);
         checkIfEmpty(e, population);
         checkIfEmpty(e, capital);
         checkIfEmpty(e, countryName);
 
+        checkForValidNumber(e, population);
+        checkForValidNumber(e, area);
+
         if (!e.isConsumed())
         {
-            if (countries.get(0) == null)
-            {
-                countries.remove(0);
-            }
             countries.add(new Country(countryName.getText(), capital.getText(), Long.parseLong(population.getText()), Long.parseLong(area.getText())));
             countryName.clear();
             capital.clear();
@@ -214,45 +208,28 @@ public class CountryInfo extends Application
         }
     }
 
+    private void checkForValidNumber(ActionEvent e, TextField textField)
+    {
+        try
+        {
+            if (Long.parseLong(textField.getText()) < 0)
+            {
+                e.consume();
+                textField.requestFocus();
+            }
+        }
+        catch (NumberFormatException exception)
+        {
+            e.consume();
+            textField.requestFocus();
+        }
+    }
+
     private void restrictToNumeric(TextField textField, String oldVal, String newVal)
     {
         if (!newVal.matches("[0-9]*"))
         {
             textField.setText(oldVal);
         }
-    }
-
-    private Callback<ListView<Country>, ListCell<Country>> showOnlyName()
-    {
-        return new Callback<ListView<Country>, ListCell<Country>>()
-        {
-            @Override
-            public ListCell<Country> call(ListView<Country> c)
-            {
-                final ListCell<Country> cell = new ListCell<Country>()
-                {
-                    {
-                        super.setPrefWidth(200);
-                    }
-
-                    @Override
-                    protected void updateItem(Country newC, boolean b)
-                    {
-                        super.updateItem(newC, b);
-                        if (newC != null)
-                        {
-                            setText(newC.getName());
-                        }
-                        else
-                        {
-                            setText("Keine Länder vorhanden");
-                        }
-                    }
-
-                };
-                return cell;
-            }
-
-        };
     }
 }
