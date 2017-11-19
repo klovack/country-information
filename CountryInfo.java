@@ -75,8 +75,10 @@ public class CountryInfo extends Application
         populationField.setPromptText("Einwohner");
         areaField.setPromptText("Fläche");
 
-        populationField.textProperty().addListener((obs, oldVal, newVal) -> restrictToNumeric(populationField, oldVal, newVal));
-        areaField.textProperty().addListener((obs, oldVal, newVal) -> restrictToNumeric(areaField, oldVal, newVal));
+        // populationField.textProperty().addListener((obs, oldVal, newVal) ->
+        // restrictToNumeric(populationField, oldVal, newVal));
+        // areaField.textProperty().addListener((obs, oldVal, newVal) ->
+        // restrictToNumeric(areaField, oldVal, newVal));
 
         // ==================== Buttons ==============================
         Button btnAdd = new Button("Hinzuf\u00fcgen");
@@ -225,11 +227,12 @@ public class CountryInfo extends Application
         }
     }
 
-    private void restrictToNumeric(TextField textField, String oldVal, String newVal)
-    {
-        if (!newVal.matches("[0-9]*"))
-        {
-            textField.setText(oldVal);
-        }
-    }
+    // private void restrictToNumeric(TextField textField, String oldVal, String
+    // newVal)
+    // {
+    // if (!newVal.matches("[0-9]*"))
+    // {
+    // textField.setText(oldVal);
+    // }
+    // }
 }
